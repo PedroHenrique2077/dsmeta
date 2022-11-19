@@ -1,16 +1,32 @@
-import { useState } from "react"
-import DatePicker from "react-datepicker"
-import "react-datepicker/dist/react-datepicker.css"
+import axios from "axios";
+import { useEffect, useState } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { Sale } from "../../models/sale";
+import { BASE_URL } from "../../utils/request";
 
-import NotificationButton from "../notificationButton/NotificationButton"
-import "./Styles.css"
+import NotificationButton from "../notificationButton/NotificationButton";
+import "./Styles.css";
 
 function SalesCard() {
+  const min = new Date(new Date().setDate(new Date().getDate() - 365));
+  const max = new Date();
+  const [minDate, setMinDate] = useState(min);
+  const [maxDate, setMaxDate] = useState(max);
 
-  const min = new Date(new Date().setDate(new Date().getDate() - 365))
-  const max = new Date()
-  const [minDate, setMinDate] = useState(min)
-  const [maxDate, setMaxDate] = useState(max)
+  const [sales, setSales] = useState<Sale[]>([]);
+
+  useEffect(() => {
+    //formata as datas para yyyy-mm-dd
+    const dmin = minDate.toISOString().slice(0,10)
+    const dmax = maxDate.toISOString().slice(0,10)
+
+    axios.get(`${BASE_URL}/sales?minDate=${dmin}&maxDate=${dmax}`)
+      .then((response) => {
+        setSales(response.data.content);
+    });
+    //sempre que o ESTADO do minDate e maxDate mudar a função useEffect roda novamente por causa do [minDate, maxDate]
+  }, [minDate, maxDate]);
 
   return (
     <div className="dsmeta-card">
@@ -48,45 +64,23 @@ function SalesCard() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="show992">#341</td>
-              <td className="show576">08/07/2022</td>
-              <td>Anakin</td>
-              <td className="show992">15</td>
-              <td className="show992">11</td>
-              <td>R$ 55300.00</td>
-              <td>
-                <div className="dsmeta-red-btn-container">
-                  <NotificationButton />
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className="show992">#341</td>
-              <td className="show576">08/07/2022</td>
-              <td>Anakin</td>
-              <td className="show992">15</td>
-              <td className="show992">11</td>
-              <td>R$ 55300.00</td>
-              <td>
-                <div className="dsmeta-red-btn-container">
-                  <NotificationButton />
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td className="show992">#341</td>
-              <td className="show576">08/07/2022</td>
-              <td>Anakin</td>
-              <td className="show992">15</td>
-              <td className="show992">11</td>
-              <td>R$ 55300.00</td>
-              <td>
-                <div className="dsmeta-red-btn-container">
-                  <NotificationButton />
-                </div>
-              </td>
-            </tr>
+            {sales.map((sale) => {
+              return (
+                <tr key={sale.id}>
+                  <td className="show992">{sale.id}</td>
+                  <td className="show576">{new Date(sale.date).toLocaleDateString()}</td>
+                  <td>{sale.sellerName}</td>
+                  <td className="show992">{sale.visited}</td>
+                  <td className="show992">{sale.deals}</td>
+                  <td>R$ {sale.amount}</td>
+                  <td>
+                    <div className="dsmeta-red-btn-container">
+                      <NotificationButton saleId={sale.id} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -94,4 +88,4 @@ function SalesCard() {
   );
 }
 
-export default SalesCard
+export default SalesCard;
